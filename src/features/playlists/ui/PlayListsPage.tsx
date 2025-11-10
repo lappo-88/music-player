@@ -44,18 +44,13 @@ export const PlaylistsPage = () => {
 
     }
 
-
-
-
     return (
         <div className={s.container}>
             <h1>Playlists page</h1>
             <CreatePlaylistForm />
             <div className={s.items}>
                 {data?.data.map(playlist => {
-                    const isEditing = playlistId === playlist.id
-
-
+                    const isEditing = playlist.id === playlistId
 
                     return (
                         <div className={s.item} key={playlist.id}>
@@ -69,7 +64,7 @@ export const PlaylistsPage = () => {
                                     setPlaylistId={setPlaylistId}
                                 />
                                 :
-                              <PlaylistItem playlist={playlist} editPlaylistHandler={editPlaylistHandler} deletePlaylistHandler={deletePlaylistHandler}/>
+                              <PlaylistItem playlist={playlist} deletePlaylistHandler={deletePlaylistHandler} editPlaylistHandler={editPlaylistHandler} />
                             }
 
                         </div>
