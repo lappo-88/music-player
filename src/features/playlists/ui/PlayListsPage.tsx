@@ -10,6 +10,7 @@ import { Pagination} from "@/common/components";
 import {PlaylistsList} from "@/features/playlists/ui/PlaylistsList/PlaylistsList.tsx";
 
 
+
 export const PlaylistsPage = () => {
     const [search, setSearch] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
@@ -20,7 +21,6 @@ export const PlaylistsPage = () => {
         pageNumber: currentPage,
         pageSize,
     })
-
 
     const changePageSizeHandler = (size:number)=>{
         setCurrentPage(1)
