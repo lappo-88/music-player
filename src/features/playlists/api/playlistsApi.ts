@@ -25,23 +25,32 @@ export const playlistsApi = baseApi.injectEndpoints({
         }),
         updatePlaylist: build.mutation<void, {playlistId:string, body:UpdatePlaylistArgs} >({
             query: ({playlistId, body}) => ({method: 'put',url: `playlists/${playlistId}`,body}),
-           onQueryStarted: async ({playlistId,body}, {queryFulfilled, dispatch})=> {
-               const patchResult = dispatch(
-                   playlistsApi.util.updateQueryData(
-                       'fetchPlaylists',
-                       { pageNumber: 1, pageSize: 2, search: '' },
-                       state => {
-                           const index = state.data.findIndex(playlist => playlist.id === playlistId)
-                           if (index !== -1) {
-                               state.data[index].attributes = { ...state.data[index].attributes, ...body }
-                           }
-                       }
+           onQueryStarted: async ({playlistId,body}, {queryFulfilled, dispatch,getState})=> {
+               const args = playlistsApi.util.selectCachedArgsForQuery(getState(), 'fetchPlaylists')
+               const patchCollections: any[] =[]
+               args.forEach((arg) =>{
+                   patchCollections.push(  dispatch(
+                           playlistsApi.util.updateQueryData(
+                               'fetchPlaylists',
+                               { pageNumber: arg.pageNumber, pageSize: arg.pageSize, search:arg.search},
+                               state => {
+                                   const index = state.data.findIndex(playlist => playlist.id === playlistId)
+                                   if (index !== -1) {
+                                       state.data[index].attributes = { ...state.data[index].attributes, ...body }
+                                   }
+                               }
+                           )
+                       )
                    )
-               )
+
+               })
+
                try {
                    await queryFulfilled
                } catch {
-                   patchResult.undo()
+                   patchCollections.forEach(patchCollection => {
+                       patchCollection.undo()
+                   })
                }
                 },
             invalidatesTags: ['Playlist'],
