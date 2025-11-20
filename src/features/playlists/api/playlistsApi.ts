@@ -8,6 +8,7 @@ import {baseApi} from "@/app/api/baseApi.ts";
 import type {Images} from "@/common/types";
 
 
+
 export const playlistsApi = baseApi.injectEndpoints({
         endpoints: (build) => ({
         fetchPlaylists: build.query<PlaylistsResponse, FetchPlaylistsArgs >({
@@ -24,6 +25,25 @@ export const playlistsApi = baseApi.injectEndpoints({
         }),
         updatePlaylist: build.mutation<void, {playlistId:string, body:UpdatePlaylistArgs} >({
             query: ({playlistId, body}) => ({method: 'put',url: `playlists/${playlistId}`,body}),
+           onQueryStarted: async ({playlistId,body}, {queryFulfilled, dispatch})=> {
+               const patchResult = dispatch(
+                   playlistsApi.util.updateQueryData(
+                       'fetchPlaylists',
+                       { pageNumber: 1, pageSize: 2, search: '' },
+                       state => {
+                           const index = state.data.findIndex(playlist => playlist.id === playlistId)
+                           if (index !== -1) {
+                               state.data[index].attributes = { ...state.data[index].attributes, ...body }
+                           }
+                       }
+                   )
+               )
+               try {
+                   await queryFulfilled
+               } catch {
+                   patchResult.undo()
+               }
+                },
             invalidatesTags: ['Playlist'],
         }),
         uploadPlaylistCover: build.mutation<Images,{playlistId: string; file:File} >({
