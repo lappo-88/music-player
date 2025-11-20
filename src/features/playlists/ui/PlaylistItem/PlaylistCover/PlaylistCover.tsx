@@ -6,7 +6,7 @@ import {
 import type {Images} from "@/common/types";
 import s from "./PlaylistCover.module.css";
 import defaultCover from '@/assets/images/default-playlist-cover.png'
-import {toast} from "react-toastify";
+import {errorToast} from "@/common/utils"
 
 
 type Props = {
@@ -30,14 +30,11 @@ export const PlaylistCover = ({ playlistId, images }: Props) => {
         if (!file) return
 
         if (!allowedTypes.includes(file.type)) {
-            toast('Only JPEG, PNG or GIF images are allowed', { type: 'error', theme: 'colored' })
+            errorToast('Only JPEG, PNG or GIF images are allowed')
         }
 
         if (file.size > maxSize) {
-            toast(`The file is too large. Max size is ${Math.round(maxSize / 1024)} KB`,{
-                type: 'error',
-                theme: 'colored',
-            })
+            errorToast(`The file is too large. Max size is ${Math.round(maxSize / 1024)} KB`)
         }
 
         uploadPlaylistCover({ playlistId, file })
