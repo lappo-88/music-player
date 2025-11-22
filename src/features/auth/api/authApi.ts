@@ -32,7 +32,7 @@ export const authApi = baseApi.injectEndpoints({
                 await queryFulfilled
                 localStorage.removeItem(AUTH_KEYS.accessToken)
                 localStorage.removeItem(AUTH_KEYS.refreshToken)
-                dispatch(authApi.util.invalidateTags(['Auth']))
+                dispatch(baseApi.util.resetApiState())
             },
         }),
        }),
