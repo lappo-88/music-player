@@ -1,22 +1,33 @@
 
 import type {
     CreatePlaylistArgs, FetchPlaylistsArgs,
-    PlaylistData,
     PlaylistsResponse, UpdatePlaylistArgs
 } from "@/features/playlists/api/playlistsApi.types.ts";
 import {baseApi} from "@/app/api/baseApi.ts";
 import type {Images} from "@/common/types";
-
+import {playlistCreateResponseSchema, playlistsResponseSchema} from "@/features/playlists/model/playlists.schemas.ts";
+import {errorToast} from "@/common/utils";
+import {imagesSchema} from "@/common/schemas"
 
 
 export const playlistsApi = baseApi.injectEndpoints({
         endpoints: (build) => ({
         fetchPlaylists: build.query<PlaylistsResponse, FetchPlaylistsArgs >({
             query: (params) => ({url:`playlists`,params}),
+            responseSchema:playlistsResponseSchema,
+            catchSchemaFailure: err => {
+                errorToast('Zod error. Details in the console', err.issues)
+                return { status: 'CUSTOM_ERROR', error: 'Schema validation failed' }
+            },
             providesTags: ['Playlist'],
         }),
-        createPlaylist: build.mutation<{ data:PlaylistData }, CreatePlaylistArgs >({
-            query: (body) => ({method: "post", url: "playlists", body}),
+        createPlaylist: build.mutation({
+            query: (body:CreatePlaylistArgs) => ({method: "post", url: "playlists", body}),
+            responseSchema: playlistCreateResponseSchema,
+            catchSchemaFailure: err => {
+                errorToast('Zod error. Details in the console', err.issues)
+                return { status: 'CUSTOM_ERROR', error: 'Schema validation failed' }
+            },
             invalidatesTags: ['Playlist'],
         }),
             deletePlaylist: build.mutation<void, string >({
@@ -25,6 +36,7 @@ export const playlistsApi = baseApi.injectEndpoints({
         }),
         updatePlaylist: build.mutation<void, {playlistId:string, body:UpdatePlaylistArgs} >({
             query: ({playlistId, body}) => ({method: 'put',url: `playlists/${playlistId}`,body}),
+
            onQueryStarted: async ({playlistId,body}, {queryFulfilled, dispatch,getState})=> {
                const args = playlistsApi.util.selectCachedArgsForQuery(getState(), 'fetchPlaylists')
                const patchCollections: any[] =[]
@@ -61,6 +73,11 @@ export const playlistsApi = baseApi.injectEndpoints({
                 const formData = new FormData()
                 formData.append("file", file)
                 return ({method: 'post', url: `playlists/${playlistId}/images/main`, body:{formData}})
+            },
+            responseSchema: imagesSchema,
+            catchSchemaFailure: err => {
+                errorToast('Zod error. Details in the console', err.issues)
+                return { status: 'CUSTOM_ERROR', error: 'Schema validation failed' }
             },
             invalidatesTags: ['Playlist'],
         }),
