@@ -7,7 +7,8 @@ import {baseApi} from "@/app/api/baseApi.ts";
 import type {Images} from "@/common/types";
 import {playlistCreateResponseSchema, playlistsResponseSchema} from "@/features/playlists/model/playlists.schemas.ts";
 import {imagesSchema} from "@/common/schemas"
-import {withZodCatch} from "@/common/utils/withZodCatch.ts";
+import {withZodCatch} from "@/common/utils";
+
 
 
 export const playlistsApi = baseApi.injectEndpoints({
