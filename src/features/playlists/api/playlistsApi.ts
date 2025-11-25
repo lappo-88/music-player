@@ -6,28 +6,20 @@ import type {
 import {baseApi} from "@/app/api/baseApi.ts";
 import type {Images} from "@/common/types";
 import {playlistCreateResponseSchema, playlistsResponseSchema} from "@/features/playlists/model/playlists.schemas.ts";
-import {errorToast} from "@/common/utils";
 import {imagesSchema} from "@/common/schemas"
+import {withZodCatch} from "@/common/utils/withZodCatch.ts";
 
 
 export const playlistsApi = baseApi.injectEndpoints({
         endpoints: (build) => ({
         fetchPlaylists: build.query<PlaylistsResponse, FetchPlaylistsArgs >({
             query: (params) => ({url:`playlists`,params}),
-            responseSchema:playlistsResponseSchema,
-            catchSchemaFailure: err => {
-                errorToast('Zod error. Details in the console', err.issues)
-                return { status: 'CUSTOM_ERROR', error: 'Schema validation failed' }
-            },
+            ...withZodCatch(playlistsResponseSchema),
             providesTags: ['Playlist'],
         }),
         createPlaylist: build.mutation({
             query: (body:CreatePlaylistArgs) => ({method: "post", url: "playlists", body}),
-            responseSchema: playlistCreateResponseSchema,
-            catchSchemaFailure: err => {
-                errorToast('Zod error. Details in the console', err.issues)
-                return { status: 'CUSTOM_ERROR', error: 'Schema validation failed' }
-            },
+            ...withZodCatch(playlistCreateResponseSchema),
             invalidatesTags: ['Playlist'],
         }),
             deletePlaylist: build.mutation<void, string >({
@@ -74,11 +66,7 @@ export const playlistsApi = baseApi.injectEndpoints({
                 formData.append("file", file)
                 return ({method: 'post', url: `playlists/${playlistId}/images/main`, body:{formData}})
             },
-            responseSchema: imagesSchema,
-            catchSchemaFailure: err => {
-                errorToast('Zod error. Details in the console', err.issues)
-                return { status: 'CUSTOM_ERROR', error: 'Schema validation failed' }
-            },
+            ...withZodCatch(imagesSchema),
             invalidatesTags: ['Playlist'],
         }),
         deletePlaylistCover: build.mutation<void, { playlistId: string }>({
