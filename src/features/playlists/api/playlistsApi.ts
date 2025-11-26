@@ -1,6 +1,6 @@
 
 import type {
-    CreatePlaylistArgs, FetchPlaylistsArgs,
+    CreatePlaylistArgs, FetchPlaylistsArgs, PlaylistCreatedEvent,
     PlaylistsResponse, UpdatePlaylistArgs
 } from "@/features/playlists/api/playlistsApi.types.ts";
 import {baseApi} from "@/app/api/baseApi.ts";
@@ -8,6 +8,7 @@ import type {Images} from "@/common/types";
 import {playlistCreateResponseSchema, playlistsResponseSchema} from "@/features/playlists/model/playlists.schemas.ts";
 import {imagesSchema} from "@/common/schemas"
 import {withZodCatch} from "@/common/utils";
+import {io, Socket} from "socket.io-client";
 
 
 
@@ -16,6 +17,30 @@ export const playlistsApi = baseApi.injectEndpoints({
         fetchPlaylists: build.query<PlaylistsResponse, FetchPlaylistsArgs >({
             query: (params) => ({url:`playlists`,params}),
             ...withZodCatch(playlistsResponseSchema),
+            keepUnusedDataFor: 0,
+          onCacheEntryAdded:async (_arg, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) =>{
+              await cacheDataLoaded
+              const socket: Socket = io('https://musicfun.it-incubator.app', {
+                  path: '/api/1.0/ws',
+                  transports: ['websocket'],
+              })
+
+              socket.on('connect', () => console.log('✅ Подключен к серверу'))
+
+              socket.on('tracks.playlist-created', (msg: PlaylistCreatedEvent) => {
+                  // 1 вариант
+                  const newPlaylist = msg.payload.data
+                  updateCachedData(state => {
+                      state.data.pop()
+                      state.data.unshift(newPlaylist)
+                      state.meta.totalCount = state.meta.totalCount + 1
+                      state.meta.pagesCount = Math.ceil(state.meta.totalCount / state.meta.pageSize)
+                  })
+              })
+
+              await cacheEntryRemoved
+              socket.on('disconnect', () => console.log('❌ Соединение разорвано'))
+       },
             providesTags: ['Playlist'],
         }),
         createPlaylist: build.mutation({
@@ -47,7 +72,6 @@ export const playlistsApi = baseApi.injectEndpoints({
                            )
                        )
                    )
-
                })
 
                try {
