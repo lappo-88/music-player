@@ -8,8 +8,8 @@ import type {Images} from "@/common/types";
 import {playlistCreateResponseSchema, playlistsResponseSchema} from "@/features/playlists/model/playlists.schemas.ts";
 import {imagesSchema} from "@/common/schemas"
 import {withZodCatch} from "@/common/utils";
-import {io, Socket} from "socket.io-client";
-
+import {SOCKET_EVENTS} from "@/common/constants";
+import {SubscribeToEvent} from "@/common/socket";
 
 
 export const playlistsApi = baseApi.injectEndpoints({
@@ -20,15 +20,9 @@ export const playlistsApi = baseApi.injectEndpoints({
             keepUnusedDataFor: 0,
           onCacheEntryAdded:async (_arg, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) =>{
               await cacheDataLoaded
-              const socket: Socket = io('https://musicfun.it-incubator.app', {
-                  path: '/api/1.0/ws',
-                  transports: ['websocket'],
-              })
 
-              socket.on('connect', () => console.log('✅ Подключен к серверу'))
 
-              socket.on('tracks.playlist-created', (msg: PlaylistCreatedEvent) => {
-                  // 1 вариант
+              const unsubscribe =  SubscribeToEvent<PlaylistCreatedEvent>(SOCKET_EVENTS.PLAYLIST_CREATED, (msg: PlaylistCreatedEvent) => {
                   const newPlaylist = msg.payload.data
                   updateCachedData(state => {
                       state.data.pop()
@@ -39,7 +33,8 @@ export const playlistsApi = baseApi.injectEndpoints({
               })
 
               await cacheEntryRemoved
-              socket.on('disconnect', () => console.log('❌ Соединение разорвано'))
+              unsubscribe()
+
        },
             providesTags: ['Playlist'],
         }),
