@@ -1,7 +1,7 @@
 
 import type {
     CreatePlaylistArgs, FetchPlaylistsArgs, PlaylistCreatedEvent,
-    PlaylistsResponse, UpdatePlaylistArgs
+    PlaylistsResponse, UpdatePlaylistArgs,PlaylistUpdatedEvent
 } from "@/features/playlists/api/playlistsApi.types.ts";
 import {baseApi} from "@/app/api/baseApi.ts";
 import type {Images} from "@/common/types";
@@ -9,7 +9,9 @@ import {playlistCreateResponseSchema, playlistsResponseSchema} from "@/features/
 import {imagesSchema} from "@/common/schemas"
 import {withZodCatch} from "@/common/utils";
 import {SOCKET_EVENTS} from "@/common/constants";
-import {SubscribeToEvent} from "@/common/socket";
+import {subscribeToEvent} from "@/common/socket/subscribeToEvent.ts";
+
+
 
 
 export const playlistsApi = baseApi.injectEndpoints({
@@ -22,7 +24,7 @@ export const playlistsApi = baseApi.injectEndpoints({
               await cacheDataLoaded
 
 
-              const unsubscribe =  SubscribeToEvent<PlaylistCreatedEvent>(SOCKET_EVENTS.PLAYLIST_CREATED, (msg: PlaylistCreatedEvent) => {
+              const unsubscribe =  subscribeToEvent<PlaylistCreatedEvent>(SOCKET_EVENTS.PLAYLIST_CREATED, (msg: PlaylistCreatedEvent) => {
                   const newPlaylist = msg.payload.data
                   updateCachedData(state => {
                       state.data.pop()
@@ -32,8 +34,22 @@ export const playlistsApi = baseApi.injectEndpoints({
                   })
               })
 
+              const unsubscribe2 = subscribeToEvent<PlaylistUpdatedEvent>(
+                  SOCKET_EVENTS.PLAYLIST_UPDATED,
+                  msg => {
+                      const newPlaylist = msg.payload.data
+                      updateCachedData(state => {
+                          const index = state.data.findIndex(playlist => playlist.id === newPlaylist.id)
+                          if (index !== -1) {
+                              state.data[index] = { ...state.data[index], ...newPlaylist }
+                          }
+                      })
+                  }
+              )
+
               await cacheEntryRemoved
               unsubscribe()
+              unsubscribe2()
 
        },
             providesTags: ['Playlist'],

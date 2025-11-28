@@ -39,3 +39,10 @@ export type PlaylistCreatedEvent = {
         data: PlaylistData
     }
 }
+// WebSocket Events
+export type PlaylistUpdatedEvent = {
+    type: 'tracks.playlist-updated'
+    payload: {
+        data: PlaylistData
+    }
+}
