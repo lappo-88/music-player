@@ -23,33 +23,32 @@ export const playlistsApi = baseApi.injectEndpoints({
           onCacheEntryAdded:async (_arg, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) =>{
               await cacheDataLoaded
 
-
-              const unsubscribe =  subscribeToEvent<PlaylistCreatedEvent>(SOCKET_EVENTS.PLAYLIST_CREATED, (msg: PlaylistCreatedEvent) => {
-                  const newPlaylist = msg.payload.data
-                  updateCachedData(state => {
-                      state.data.pop()
-                      state.data.unshift(newPlaylist)
-                      state.meta.totalCount = state.meta.totalCount + 1
-                      state.meta.pagesCount = Math.ceil(state.meta.totalCount / state.meta.pageSize)
-                  })
-              })
-
-              const unsubscribe2 = subscribeToEvent<PlaylistUpdatedEvent>(
-                  SOCKET_EVENTS.PLAYLIST_UPDATED,
-                  msg => {
+              const unsubscribes = [
+                  subscribeToEvent<PlaylistCreatedEvent>(SOCKET_EVENTS.PLAYLIST_CREATED, (msg: PlaylistCreatedEvent) => {
                       const newPlaylist = msg.payload.data
                       updateCachedData(state => {
-                          const index = state.data.findIndex(playlist => playlist.id === newPlaylist.id)
-                          if (index !== -1) {
-                              state.data[index] = { ...state.data[index], ...newPlaylist }
-                          }
+                          state.data.pop()
+                          state.data.unshift(newPlaylist)
+                          state.meta.totalCount = state.meta.totalCount + 1
+                          state.meta.pagesCount = Math.ceil(state.meta.totalCount / state.meta.pageSize)
                       })
-                  }
-              )
+                  }),
+                  subscribeToEvent<PlaylistUpdatedEvent>(
+                      SOCKET_EVENTS.PLAYLIST_UPDATED,
+                      msg => {
+                          const newPlaylist = msg.payload.data
+                          updateCachedData(state => {
+                              const index = state.data.findIndex(playlist => playlist.id === newPlaylist.id)
+                              if (index !== -1) {
+                                  state.data[index] = { ...state.data[index], ...newPlaylist }
+                              }
+                          })
+                      }
+                  )
+              ]
 
               await cacheEntryRemoved
-              unsubscribe()
-              unsubscribe2()
+              unsubscribes.forEach(unsubscribe => unsubscribe())
 
        },
             providesTags: ['Playlist'],
